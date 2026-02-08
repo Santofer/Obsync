@@ -6,7 +6,7 @@ A native macOS menu-bar application that syncs tasks between an [Obsidian](https
 
 ## Download
 
-**[Download Obsync v1.0.0](https://github.com/Santofer/Obsync/releases/tag/v1.0.0)** — macOS 14.0+ (Sonoma or later)
+**[Download Obsync v1.0.1](https://github.com/Santofer/Obsync/releases/tag/v1.0.1)** — macOS 13.0+ (Ventura or later) — Universal binary (Apple Silicon + Intel)
 
 > Since the app is not notarized, right-click the app and select **Open** on first launch to bypass Gatekeeper.
 

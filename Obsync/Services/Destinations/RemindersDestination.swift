@@ -53,7 +53,12 @@ class RemindersDestination: TaskDestination {
         let list = try getOrCreateList(named: listName)
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = list
-        task.applyToReminder(reminder, includeDueTime: config.includeDueTime)
+        task.applyToReminder(
+            reminder,
+            includeDueTime: config.includeDueTime,
+            addTaskLink: config.addTaskLinkToReminders,
+            vaultPath: config.vaultPath
+        )
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
     }
@@ -62,7 +67,12 @@ class RemindersDestination: TaskDestination {
         guard let reminder = eventStore.calendarItem(withIdentifier: id) as? EKReminder else {
             throw RemindersError.reminderNotFound(id)
         }
-        task.applyToReminder(reminder, includeDueTime: config.includeDueTime)
+        task.applyToReminder(
+            reminder,
+            includeDueTime: config.includeDueTime,
+            addTaskLink: config.addTaskLinkToReminders,
+            vaultPath: config.vaultPath
+        )
         try eventStore.save(reminder, commit: true)
     }
 

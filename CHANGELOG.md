@@ -4,6 +4,28 @@ All notable changes to Remindian (formerly Obsync) are documented here.
 
 ---
 
+## v3.3.0 (February 2026)
+
+### New Features
+- **Universal Binary (Intel + Apple Silicon)** — DMG now includes both arm64 and x86_64 architectures, fixing compatibility with Intel Macs (#7)
+- **Launch at Login** — Option to automatically start Remindian when you log in (Settings > Appearance & Shortcuts)
+- **Skip old completed tasks** — Configurable age limit to prevent syncing thousands of old completed tasks. Choose 7/30/90/180/365 days (#11)
+- **Reminders list filtering** — Only sync specific Reminders lists (e.g., "Work, Personal") instead of all lists. Great for excluding shared lists like Groceries (#12)
+- **Task link in Reminders** — Adds an `obsidian://` deep link in Reminders notes so you can jump directly to the task file (#9)
+
+### Bug Fixes
+- Fixed: DMG not working on Intel Macs — was arm64-only (#7)
+
+### Technical Changes
+- Build configuration now uses `ARCHS = $(ARCHS_STANDARD)` for universal binary output
+- `SMAppService.mainApp` used for launch-at-login (macOS 13+)
+- `SyncConfiguration` gains `launchAtLogin`, `maxCompletedTaskAgeDays`, `syncedRemindersLists`, `addTaskLinkToReminders` fields
+- `SyncEngine` filters completed tasks by age before sync
+- `SyncEngine` filters destination tasks by allowed Reminders lists
+- `applyToReminder()` now optionally adds `obsidian://open` URL to notes
+
+---
+
 ## v3.2.0 (February 2026)
 
 ### New Features

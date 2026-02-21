@@ -387,7 +387,7 @@ extension SyncTask {
     
     /// Apply task properties to an EKReminder.
     /// Title is clean (no hashtags). Client name added in notes for work tasks.
-    func applyToReminder(_ reminder: EKReminder, includeDueTime: Bool = false) {
+    func applyToReminder(_ reminder: EKReminder, includeDueTime: Bool = false, addTaskLink: Bool = false, vaultPath: String = "") {
         reminder.title = title
         reminder.isCompleted = isCompleted
         reminder.priority = priority.toRemindersPriority
@@ -413,7 +413,7 @@ extension SyncTask {
             reminder.startDateComponents = nil
         }
 
-        // Build notes: client name + tags
+        // Build notes: client name + tags + task link
         // (EventKit has no native tag API, so tags are stored in notes for visibility)
         var noteParts: [String] = []
 
@@ -423,6 +423,15 @@ extension SyncTask {
 
         if !tags.isEmpty {
             noteParts.append("Tags: \(tags.joined(separator: " "))")
+        }
+
+        // Add obsidian:// link to the task file
+        if addTaskLink, let source = obsidianSource, !vaultPath.isEmpty {
+            let vaultName = URL(fileURLWithPath: vaultPath).lastPathComponent
+            let filePath = source.filePath.hasPrefix("/") ? String(source.filePath.dropFirst()) : source.filePath
+            let encodedVault = vaultName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? vaultName
+            let encodedFile = filePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? filePath
+            noteParts.append("obsidian://open?vault=\(encodedVault)&file=\(encodedFile)")
         }
 
         if noteParts.isEmpty {

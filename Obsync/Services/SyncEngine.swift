@@ -136,8 +136,25 @@ class SyncEngine {
             // Step 1: Get all tasks from source
             debugLog("[SyncEngine] Scanning source: \(source.sourceName)")
             debugLog("[SyncEngine] Vault: \(config.vaultPath), excluded: \(config.excludedFolders), included: \(config.includedFolders)")
-            let obsidianTasks = try source.scanTasks(config: config)
+            var obsidianTasks = try source.scanTasks(config: config)
             debugLog("[SyncEngine] Found \(obsidianTasks.count) source tasks")
+
+            // Filter out old completed tasks if configured
+            if config.maxCompletedTaskAgeDays > 0 {
+                let cutoffDate = Calendar.current.date(byAdding: .day, value: -config.maxCompletedTaskAgeDays, to: Date()) ?? Date()
+                let beforeCount = obsidianTasks.count
+                obsidianTasks = obsidianTasks.filter { task in
+                    guard task.isCompleted else { return true }
+                    if let completedDate = task.completedDate {
+                        return completedDate > cutoffDate
+                    }
+                    return task.lastModified > cutoffDate
+                }
+                let filtered = beforeCount - obsidianTasks.count
+                if filtered > 0 {
+                    debugLog("[SyncEngine] Filtered out \(filtered) completed tasks older than \(config.maxCompletedTaskAgeDays) days")
+                }
+            }
             for (i, task) in obsidianTasks.prefix(5).enumerated() {
                 debugLog("[SyncEngine]   Task \(i): \"\(task.title)\" completed=\(task.isCompleted) file=\(task.obsidianSource?.filePath ?? "?")")
             }
@@ -147,8 +164,19 @@ class SyncEngine {
 
             // Step 2: Get all tasks from destination
             debugLog("[SyncEngine] Fetching from destination: \(destination.destinationName)...")
-            let remindersTasks = try await destination.fetchAllTasks()
+            var remindersTasks = try await destination.fetchAllTasks()
             debugLog("[SyncEngine] Found \(remindersTasks.count) destination tasks")
+
+            // Filter by synced Reminders lists if configured
+            if !config.syncedRemindersLists.isEmpty {
+                let allowedLists = Set(config.syncedRemindersLists.map { $0.lowercased() })
+                let beforeCount = remindersTasks.count
+                remindersTasks = remindersTasks.filter { task in
+                    guard let list = task.targetList else { return false }
+                    return allowedLists.contains(list.lowercased())
+                }
+                debugLog("[SyncEngine] Filtered destination tasks to allowed lists: \(beforeCount) → \(remindersTasks.count)")
+            }
 
             // Step 3: Build lookup maps
             var obsidianMap: [String: SyncTask] = [:]
@@ -685,6 +713,21 @@ class SyncEngine {
                         errorMessage: "Completed task skipped"
                     ))
                     continue
+                }
+
+                // Skip tasks whose target list is not in the allowed lists
+                if !config.syncedRemindersLists.isEmpty {
+                    let targetList = config.remindersListForTag(task.targetList ?? "")
+                    let allowedLists = Set(config.syncedRemindersLists.map { $0.lowercased() })
+                    if !allowedLists.contains(targetList.lowercased()) {
+                        result.details.append(SyncLogDetail(
+                            action: .skipped,
+                            taskTitle: task.title,
+                            filePath: task.obsidianSource?.filePath,
+                            errorMessage: "List \"\(targetList)\" not in synced lists"
+                        ))
+                        continue
+                    }
                 }
 
                 // Before creating a new reminder, check if an unmatched reminder

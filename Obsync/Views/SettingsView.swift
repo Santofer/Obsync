@@ -150,6 +150,12 @@ struct GeneralSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Launch at login", isOn: $syncManager.config.launchAtLogin)
+                        .onChange(of: syncManager.config.launchAtLogin) { newValue in
+                            syncManager.updateLaunchAtLogin(newValue)
+                        }
+                        .help("Automatically start Remindian when you log in")
+
                     Toggle("Hide dock icon", isOn: $syncManager.config.hideDockIcon)
                         .onChange(of: syncManager.config.hideDockIcon) { _ in
                             syncManager.updateDockIconVisibility()
@@ -363,6 +369,33 @@ struct AdvancedSettingsView: View {
             Section {
                 Toggle("Sync completed tasks", isOn: $syncManager.config.syncCompletedTasks)
 
+                if syncManager.config.syncCompletedTasks {
+                    HStack {
+                        Text("Skip completed tasks older than:")
+                            .foregroundColor(.secondary)
+                        Picker("", selection: $syncManager.config.maxCompletedTaskAgeDays) {
+                            Text("No limit").tag(0)
+                            Text("7 days").tag(7)
+                            Text("30 days").tag(30)
+                            Text("90 days").tag(90)
+                            Text("180 days").tag(180)
+                            Text("1 year").tag(365)
+                        }
+                        .frame(width: 120)
+                    }
+                    .padding(.leading, 20)
+
+                    if syncManager.config.maxCompletedTaskAgeDays > 0 {
+                        Text("Completed tasks older than \(syncManager.config.maxCompletedTaskAgeDays) days will not be synced. Prevents flooding with old completed tasks.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 20)
+                    }
+                }
+
+                Toggle("Add task link to Reminders", isOn: $syncManager.config.addTaskLinkToReminders)
+                    .help("Adds an obsidian:// URL to the Reminders notes so you can jump to the task file")
+
                 Toggle("Dry run mode", isOn: $syncManager.config.dryRunMode)
                     .help("Shows what would change without making any actual changes")
 
@@ -415,6 +448,24 @@ struct AdvancedSettingsView: View {
                     .foregroundColor(.secondary)
             } header: {
                 Text("Folder Filtering")
+            }
+
+            Section {
+                LabeledContent {
+                    TextField("e.g. Work, Personal", text: Binding(
+                        get: { syncManager.config.syncedRemindersLists.joined(separator: ", ") },
+                        set: { syncManager.config.syncedRemindersLists = $0.split(separator: ",").map { String($0.trimmingCharacters(in: .whitespaces)) }.filter { !$0.isEmpty } }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                } label: {
+                    Text("Only sync lists")
+                }
+
+                Text("Comma-separated Reminders list names. If set, only tasks in these lists will be synced. Leave empty to sync all lists.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } header: {
+                Text("Reminders List Filtering")
             }
 
             Section {

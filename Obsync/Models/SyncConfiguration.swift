@@ -37,6 +37,10 @@ class SyncConfiguration: ObservableObject, Codable {
     @Published var things3AuthToken: String
     @Published var taskNotesFolder: String  // Relative path within vault (e.g., "tasks")
     @Published var taskNotesIntegrationMode: String  // "cli", "file", or "http"
+    @Published var launchAtLogin: Bool
+    @Published var maxCompletedTaskAgeDays: Int  // 0 = no limit, >0 = skip completed tasks older than N days
+    @Published var syncedRemindersLists: [String]  // Empty = sync all lists, non-empty = only these lists
+    @Published var addTaskLinkToReminders: Bool  // Add obsidian:// link to Reminders URL field
 
     enum TaskSourceType: String, Codable, CaseIterable {
         case obsidianTasks = "obsidianTasks"
@@ -87,6 +91,7 @@ class SyncConfiguration: ObservableObject, Codable {
         case enableNewTaskWriteback, inboxFilePath, enableFileWatcher
         case enableNotifications, globalHotKeyEnabled, globalHotKeyCode, globalHotKeyModifiers
         case taskSourceType, taskDestinationType, things3AuthToken, taskNotesFolder, taskNotesIntegrationMode
+        case launchAtLogin, maxCompletedTaskAgeDays, syncedRemindersLists, addTaskLinkToReminders
     }
 
     init(
@@ -121,7 +126,11 @@ class SyncConfiguration: ObservableObject, Codable {
         taskDestinationType: TaskDestinationType = .appleReminders,
         things3AuthToken: String = "",
         taskNotesFolder: String = "",
-        taskNotesIntegrationMode: String = "cli"
+        taskNotesIntegrationMode: String = "cli",
+        launchAtLogin: Bool = false,
+        maxCompletedTaskAgeDays: Int = 0,
+        syncedRemindersLists: [String] = [],
+        addTaskLinkToReminders: Bool = true
     ) {
         self.vaultPath = vaultPath
         self.syncIntervalMinutes = syncIntervalMinutes
@@ -155,6 +164,10 @@ class SyncConfiguration: ObservableObject, Codable {
         self.things3AuthToken = things3AuthToken
         self.taskNotesFolder = taskNotesFolder
         self.taskNotesIntegrationMode = taskNotesIntegrationMode
+        self.launchAtLogin = launchAtLogin
+        self.maxCompletedTaskAgeDays = maxCompletedTaskAgeDays
+        self.syncedRemindersLists = syncedRemindersLists
+        self.addTaskLinkToReminders = addTaskLinkToReminders
     }
 
     required init(from decoder: Decoder) throws {
@@ -191,6 +204,10 @@ class SyncConfiguration: ObservableObject, Codable {
         things3AuthToken = try container.decodeIfPresent(String.self, forKey: .things3AuthToken) ?? ""
         taskNotesFolder = try container.decodeIfPresent(String.self, forKey: .taskNotesFolder) ?? ""
         taskNotesIntegrationMode = try container.decodeIfPresent(String.self, forKey: .taskNotesIntegrationMode) ?? "cli"
+        launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        maxCompletedTaskAgeDays = try container.decodeIfPresent(Int.self, forKey: .maxCompletedTaskAgeDays) ?? 0
+        syncedRemindersLists = try container.decodeIfPresent([String].self, forKey: .syncedRemindersLists) ?? []
+        addTaskLinkToReminders = try container.decodeIfPresent(Bool.self, forKey: .addTaskLinkToReminders) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
@@ -227,6 +244,10 @@ class SyncConfiguration: ObservableObject, Codable {
         try container.encode(things3AuthToken, forKey: .things3AuthToken)
         try container.encode(taskNotesFolder, forKey: .taskNotesFolder)
         try container.encode(taskNotesIntegrationMode, forKey: .taskNotesIntegrationMode)
+        try container.encode(launchAtLogin, forKey: .launchAtLogin)
+        try container.encode(maxCompletedTaskAgeDays, forKey: .maxCompletedTaskAgeDays)
+        try container.encode(syncedRemindersLists, forKey: .syncedRemindersLists)
+        try container.encode(addTaskLinkToReminders, forKey: .addTaskLinkToReminders)
     }
 
     // MARK: - Persistence

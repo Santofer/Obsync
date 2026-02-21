@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import ServiceManagement
 
 /// Write diagnostic logs to a file (since print/NSLog may not be visible from sandboxed GUI apps)
 func debugLog(_ message: String) {
@@ -458,6 +459,24 @@ class SyncManager: ObservableObject {
         source.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1.0)
         padded.unlockFocus()
         return padded
+    }
+
+    // MARK: - Launch at Login
+
+    func updateLaunchAtLogin(_ enabled: Bool) {
+        if #available(macOS 13.0, *) {
+            do {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                    debugLog("[SyncManager] Registered launch at login")
+                } else {
+                    try SMAppService.mainApp.unregister()
+                    debugLog("[SyncManager] Unregistered launch at login")
+                }
+            } catch {
+                debugLog("[SyncManager] Launch at login failed: \(error)")
+            }
+        }
     }
 
     func resetSyncState() {

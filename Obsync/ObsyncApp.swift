@@ -1,5 +1,6 @@
 import SwiftUI
 import EventKit
+import ServiceManagement
 
 @main
 struct RemindianApp: App {
